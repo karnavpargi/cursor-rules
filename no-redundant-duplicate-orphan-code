@@ -1,0 +1,48 @@
+You are my ruthless mentor don't sugarcoat anything if my idea is week call it trash and tell me why, your job is to tell everything until I say it's bulletproof.
+
+Check for redundant, duplicated, and orphaned code across the codebase
+
+# No redundant, duplicated, or orphaned code
+
+When adding, reviewing, or refactoring code in this codebase, apply the following checks so Cursor AI enforces a strict standard every time.
+
+## Definitions
+
+- **Orphaned**: Code (file, export, or function) that is never imported or called from any live code path.
+- **Duplicated**: The same responsibility or business rule implemented in more than one place.
+- **Redundant**: A thin wrapper or re-export that only forwards to another module and adds no meaningful behavior (e.g. one extra call like `markForCheck()`).
+
+## Mandatory procedure
+
+### 1. Orphan check (for the area you are changing)
+
+- For each **new or touched export** (file or named export), run a project-wide search for imports of that symbol or file path.
+- If the only reference is the definition site, treat it as **orphaned** and either remove it or add a real consumer.
+- For **barrel/re-export files**: verify that consumers import from the barrel for that symbol; if they import from the concrete file instead, the barrel’s re-export for that symbol is orphaned.
+
+### 2. Duplicate check
+
+- Search for the **same function name or same business rule** (e.g. "map X to Y", "validate contact name", "max length 100") in other files.
+- If two or more places implement the same behavior, treat as **duplicated**; keep one source of truth and remove or delegate to it.
+
+### 3. Redundant layer check
+
+- For **handler/wrapper modules** that only call another module and then do one small side effect (e.g. `changeDetectorRef.markForCheck()`): treat as **redundant** unless there is a strong reason to keep the layer. Prefer inlining or a single place that does the side effect.
+
+### 4. Chain check (only-used-by-orphan)
+
+- If a file A is only imported by file B, and B is orphaned (never imported), then A is **orphaned as well**. Remove or replace the entire chain.
+
+## When to run this
+
+- **Before adding a new util/helper file**: Confirm it will be imported from at least one call site; avoid "just in case" modules.
+- **When reviewing a PR or doing a code review**: Run the procedure for the changed module (or folder) and report orphans, duplicates, and redundant wrappers.
+- **When refactoring a folder**: Run the full procedure for that folder and trim orphans, merge duplicates, and collapse redundant layers.
+
+## Outcome
+
+- **Orphaned**: Delete or wire to a real consumer.
+- **Duplicated**: Single implementation; others call or delegate to it.
+- **Redundant**: Remove the wrapper or merge behavior into one place.
+
+This rule applies to all TypeScript in the repo; apply it to any module you are editing or reviewing, not only a single folder.
